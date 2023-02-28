@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -10,35 +9,10 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gocolly/colly"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
-// regex
-var IsLetter = regexp.MustCompile(`^[a-zA-Z]+$`).MatchString
-
-func main() {
-
-	e := echo.New()
-	e.GET("/word/:word", func(c echo.Context) error {
-		word := strings.ToLower(c.Param("word"))
-
-		if !IsLetter(word) {
-			return c.JSON(http.StatusUnprocessableEntity, &ErrorResponse{"Please provide word containing letters only."})
-		}
-
-		res := getContents(word)
-
-		if res.MainWord == "" {
-			return c.JSON(http.StatusNotFound, &ErrorResponse{"No Definition found."})
-		}
-
-		return c.JSON(http.StatusOK, &res)
-	})
-	e.Logger.Fatal(e.Start("localhost:1323"))
-
-}
-
 // structs
-
 type WordStruct struct {
 	MainWord        string          `json:"word"`
 	Audio           string          `json:"audio"`
@@ -79,6 +53,32 @@ const (
 	posSynAntParentTag   = `div[role="list"]`
 )
 
+// regex
+var IsLetter = regexp.MustCompile(`^[a-zA-Z]+$`).MatchString
+
+func main() {
+
+	e := echo.New()
+	e.Use(middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(20)))
+	e.GET("/word/:word", func(c echo.Context) error {
+		word := strings.ToLower(c.Param("word"))
+
+		if !IsLetter(word) {
+			return c.JSON(http.StatusUnprocessableEntity, &ErrorResponse{"Please provide word containing letters only."})
+		}
+
+		res := getContents(word)
+
+		if res.MainWord == "" {
+			return c.JSON(http.StatusNotFound, &ErrorResponse{"No Definition found."})
+		}
+
+		return c.JSON(http.StatusOK, &res)
+	})
+	e.Logger.Fatal(e.Start("localhost:1323"))
+
+}
+
 func getContents(word string) *WordStruct {
 	// Instantiate default collector
 	c := colly.NewCollector(
@@ -86,9 +86,6 @@ func getContents(word string) *WordStruct {
 	)
 
 	wordS := WordStruct{}
-
-	// extensions.RandomUserAgent(c)
-	// extensions.Referer(c)
 
 	// On every a element which has href attribute call callback
 	c.OnHTML(mainContainer, func(e *colly.HTMLElement) {
@@ -104,9 +101,6 @@ func getContents(word string) *WordStruct {
 		thirdJsSlot := e.DOM.Find(jsSlotsFilterTag).FilterFunction(func(i int, s *goquery.Selection) bool {
 			return i == 2
 		})
-
-		// fmt.Println("js slots ===== 2")
-		// fmt.Println(jsSlots.Html())
 
 		// 	inside the 3rd div 4 dive
 		// 1- the main word
@@ -137,18 +131,18 @@ func getContents(word string) *WordStruct {
 		child.Find(posDivFilterTag).Each(func(i int, s *goquery.Selection) {
 			// we are inside each parts of speech div
 			poses := PartsOfSpeech{}
-			fmt.Println("=========================================================================")
-			fmt.Println(i, "th div")
+			// fmt.Println("=========================================================================")
+			// fmt.Println(i, "th div")
 			// get the phonetics
 			phonetics := s.Find(posPhoneticsTag).First().Text()
-			fmt.Println("phonetics ::", phonetics)
+			// fmt.Println("phonetics ::", phonetics)
 			// get pronunciation the audio source
 			audio := s.Find(posAudioTag).Children().AttrOr("src", "")
-			fmt.Println("audio ::", audio)
+			// fmt.Println("audio ::", audio)
 
 			// get the parts of speech
 			pos := s.Find(posTag).First().Text()
-			fmt.Println("pos ::", pos)
+			// fmt.Println("pos ::", pos)
 
 			poses.Phonetic = phonetics
 			poses.Audio = audio
@@ -168,9 +162,7 @@ func getContents(word string) *WordStruct {
 					exElement := dfnElement.Siblings()
 					example := strings.Trim(exElement.First().Text(), "\"")
 
-					fmt.Println("example ::", example)
-
-					// fmt.Println(exElement.Html())
+					// fmt.Println("example ::", example)
 
 					// now lets find the synonym and antonyms
 					var synonyms []string
@@ -192,7 +184,6 @@ func getContents(word string) *WordStruct {
 						}
 
 						// omit first div with text h
-
 						// now encounter Similar or Opposite
 
 						if txtToAdd == "Similar:" {
@@ -218,20 +209,15 @@ func getContents(word string) *WordStruct {
 
 					// fmt.Println(currentType)
 
-					fmt.Println("synonyms ::", strings.Join(synonyms, ","))
-					fmt.Println("antonyms ::", strings.Join(antonyms, ","))
+					// fmt.Println("synonyms ::", strings.Join(synonyms, ","))
+					// fmt.Println("antonyms ::", strings.Join(antonyms, ","))
 					poses.Definitions = append(poses.Definitions, definition)
 
 				}
-
-				// fmt.Println(s.Html())
-
-				// fmt.Println("=====================")
-				// fmt.Println(s.Html())
 			})
 			allPoses = append(allPoses, poses)
 
-			fmt.Println("=========================================================================")
+			// fmt.Println("=========================================================================")
 
 		})
 
@@ -252,10 +238,10 @@ func getContents(word string) *WordStruct {
 
 	// fmt.Println(wordS)
 
-	b, err := json.MarshalIndent(wordS, "", "  ")
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Print(string(b))
+	// b, err := json.MarshalIndent(wordS, "", "  ")
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+	// fmt.Print(string(b))
 	return &wordS
 }
