@@ -3,16 +3,38 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gocolly/colly"
+	"github.com/labstack/echo/v4"
 )
 
+// regex
+var IsLetter = regexp.MustCompile(`^[a-zA-Z]+$`).MatchString
+
 func main() {
-	fmt.Println("asdf")
-	res := getContents("abjure")
-	fmt.Println(res.MainWord == "")
+
+	e := echo.New()
+	e.GET("/word/:word", func(c echo.Context) error {
+		word := strings.ToLower(c.Param("word"))
+
+		if !IsLetter(word) {
+			return c.JSON(http.StatusUnprocessableEntity, &ErrorResponse{"Please provide word containing letters only."})
+		}
+
+		res := getContents(word)
+
+		if res.MainWord == "" {
+			return c.JSON(http.StatusNotFound, &ErrorResponse{"No Definition found."})
+		}
+
+		return c.JSON(http.StatusOK, &res)
+	})
+	e.Logger.Fatal(e.Start("localhost:1323"))
+
 }
 
 // structs
@@ -36,6 +58,10 @@ type Definition struct {
 	Example    string   `json:"example"`
 	Synonyms   []string `json:"synonyms"`
 	Antonyms   []string `json:"antonyms"`
+}
+
+type ErrorResponse struct {
+	Message string `json:"message" xml:"message"`
 }
 
 // constants
@@ -194,18 +220,16 @@ func getContents(word string) *WordStruct {
 
 					fmt.Println("synonyms ::", strings.Join(synonyms, ","))
 					fmt.Println("antonyms ::", strings.Join(antonyms, ","))
+					poses.Definitions = append(poses.Definitions, definition)
 
 				}
-
-				poses.Definitions = append(poses.Definitions, definition)
-
-				allPoses = append(allPoses, poses)
 
 				// fmt.Println(s.Html())
 
 				// fmt.Println("=====================")
 				// fmt.Println(s.Html())
 			})
+			allPoses = append(allPoses, poses)
 
 			fmt.Println("=========================================================================")
 
