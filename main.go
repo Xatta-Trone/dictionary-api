@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"runtime"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
@@ -55,7 +56,7 @@ const (
 
 // regex
 var IsLetter = regexp.MustCompile(`^[a-zA-Z]+$`).MatchString
-const PORT = ":3000"
+const PORT = ":80"
 const ENV = "production"
 
 func main() {
@@ -78,7 +79,15 @@ func main() {
 		return c.JSON(http.StatusOK, &res)
 	})
 
-	e.Logger.Fatal(e.Start(PORT))
+	URL := ""
+
+	if runtime.GOOS == "windows" {
+		URL = "localhost" + PORT
+	}else {
+		URL =  PORT
+	}
+
+	e.Logger.Fatal(e.Start(URL))
 
 }
 
