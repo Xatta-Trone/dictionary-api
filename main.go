@@ -55,6 +55,8 @@ const (
 
 // regex
 var IsLetter = regexp.MustCompile(`^[a-zA-Z]+$`).MatchString
+const PORT = ":3000"
+const ENV = "production"
 
 func main() {
 
@@ -75,7 +77,8 @@ func main() {
 
 		return c.JSON(http.StatusOK, &res)
 	})
-	e.Logger.Fatal(e.Start("localhost:1323"))
+
+	e.Logger.Fatal(e.Start(PORT))
 
 }
 
