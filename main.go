@@ -114,6 +114,8 @@ func getContents(word string) *WordStruct {
 			return i == 2
 		})
 
+		
+
 		// 	inside the 3rd div 4 dive
 		// 1- the main word
 		// 2- see definitions in
