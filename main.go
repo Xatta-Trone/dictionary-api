@@ -56,7 +56,7 @@ const (
 
 // regex
 var IsLetter = regexp.MustCompile(`^[a-zA-Z]+$`).MatchString
-const PORT = ":80"
+const PORT = ":8080"
 const ENV = "production"
 
 func main() {
