@@ -247,6 +247,11 @@ func getContents(word string) *WordStruct {
 		fmt.Println("Visiting", r.URL.String())
 	})
 
+	// Set error handler
+	c.OnError(func(r *colly.Response, err error) {
+		fmt.Println("Request URL:", r.Request.URL, "failed with response:", r, "\nError:", err)
+	})
+
 	// Start scraping on https://hackerspaces.org
 	c.Visit("https://www.google.com/search?&hl=en&q=define+" + word)
 
