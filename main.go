@@ -1,11 +1,16 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"log"
+	"math/rand"
 	"net/http"
 	"regexp"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gocolly/colly"
@@ -56,10 +61,15 @@ const (
 
 // regex
 var IsLetter = regexp.MustCompile(`^[a-zA-Z]+$`).MatchString
+
 const PORT = ":8080"
 const ENV = "production"
 
+var userAgents = []string{}
+
 func main() {
+	// get latest user agents
+	getUserAgents()
 
 	e := echo.New()
 	e.Use(middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(20)))
@@ -79,12 +89,17 @@ func main() {
 		return c.JSON(http.StatusOK, &res)
 	})
 
+	e.GET("/random", func(c echo.Context) error {
+
+		return c.JSON(http.StatusOK, getRandomUserAgent())
+	})
+
 	URL := ""
 
 	if runtime.GOOS == "windows" {
 		URL = "localhost" + PORT
-	}else {
-		URL =  PORT
+	} else {
+		URL = PORT
 	}
 
 	e.Logger.Fatal(e.Start(URL))
@@ -92,9 +107,22 @@ func main() {
 }
 
 func getContents(word string) *WordStruct {
+
+	defaultUserAgent := "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/110.0"
+	randomUserAgent := getRandomUserAgent()
+	userAgent := ""
+
+	if len(userAgents) == 0 || randomUserAgent == "" {
+		userAgent = defaultUserAgent
+	} else {
+		userAgent = randomUserAgent
+	}
+
+	fmt.Println(userAgent)
+
 	// Instantiate default collector
 	c := colly.NewCollector(
-		colly.UserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/110.0"),
+		colly.UserAgent(userAgent),
 	)
 
 	wordS := WordStruct{}
@@ -113,8 +141,6 @@ func getContents(word string) *WordStruct {
 		thirdJsSlot := e.DOM.Find(jsSlotsFilterTag).FilterFunction(func(i int, s *goquery.Selection) bool {
 			return i == 2
 		})
-
-		
 
 		// 	inside the 3rd div 4 dive
 		// 1- the main word
@@ -263,4 +289,30 @@ func getContents(word string) *WordStruct {
 	// }
 	// fmt.Print(string(b))
 	return &wordS
+}
+
+func getUserAgents() {
+	resp, err := http.Get("https://jnrbsn.github.io/user-agents/user-agents.json")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	//We Read the response body on the line below.
+	body, err := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	//Convert the body to type string
+	// sb := string(body)
+	_ = json.Unmarshal(body, &userAgents)
+	// log.Printf(sb)
+	// log.Println(userAgents)
+
+}
+
+func getRandomUserAgent() string {
+	s := rand.NewSource(time.Now().Unix())
+	r := rand.New(s) // initialize local pseudorandom generator
+	index := r.Intn(len(userAgents))
+	return userAgents[index]
 }
