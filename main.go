@@ -60,7 +60,7 @@ const (
 )
 
 // regex
-var IsLetter = regexp.MustCompile(`^[a-zA-Z]+$`).MatchString
+var IsLetter = regexp.MustCompile(`^[a-zA-Z\s-]+$`).MatchString
 
 const PORT = ":8080"
 const ENV = "production"
