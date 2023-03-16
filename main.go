@@ -80,7 +80,11 @@ func main() {
 			return c.JSON(http.StatusUnprocessableEntity, &ErrorResponse{"Please provide word containing letters only."})
 		}
 
-		res := getContents(word)
+		res, status := getContents(word)
+
+		if status == http.StatusTooManyRequests {
+			return c.JSON(http.StatusTooManyRequests, &ErrorResponse{"Too many request."})
+		}
 
 		if res.MainWord == "" {
 			return c.JSON(http.StatusNotFound, &ErrorResponse{"No Definition found."})
@@ -106,7 +110,7 @@ func main() {
 
 }
 
-func getContents(word string) *WordStruct {
+func getContents(word string) (*WordStruct, int) {
 
 	defaultUserAgent := "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/110.0"
 	randomUserAgent := getRandomUserAgent()
@@ -126,6 +130,7 @@ func getContents(word string) *WordStruct {
 	)
 
 	wordS := WordStruct{}
+	errorStatus := 200
 
 	// On every a element which has href attribute call callback
 	c.OnHTML(mainContainer, func(e *colly.HTMLElement) {
@@ -275,6 +280,7 @@ func getContents(word string) *WordStruct {
 
 	// Set error handler
 	c.OnError(func(r *colly.Response, err error) {
+		errorStatus = r.StatusCode
 		fmt.Println("Request URL:", r.Request.URL, "failed with response:", r, "\nError:", err)
 	})
 
@@ -288,7 +294,7 @@ func getContents(word string) *WordStruct {
 	// 	fmt.Println(err)
 	// }
 	// fmt.Print(string(b))
-	return &wordS
+	return &wordS, errorStatus
 }
 
 func getUserAgents() {
