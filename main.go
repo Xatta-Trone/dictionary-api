@@ -46,7 +46,7 @@ type ErrorResponse struct {
 
 // constants
 const (
-	mainContainer        = ".lr_container"
+	mainContainer        = "#center_col"
 	jsSlotsFilterTag     = `div[jsslot=""]`
 	mainWordQueryTag     = `span[data-dobid="hdw"]`
 	mainWordAudioTag     = "audio"
@@ -81,6 +81,8 @@ func main() {
 		}
 
 		res, status := getContents(word)
+
+		// fmt.Println(res, status)
 
 		if status == http.StatusTooManyRequests {
 			return c.JSON(http.StatusTooManyRequests, &ErrorResponse{"Too many request."})
@@ -129,11 +131,13 @@ func getContents(word string) (*WordStruct, int) {
 		colly.UserAgent(userAgent),
 	)
 
-	wordS := WordStruct{}
+	var wordS WordStruct
 	errorStatus := 200
 
 	// On every a element which has href attribute call callback
 	c.OnHTML(mainContainer, func(e *colly.HTMLElement) {
+
+		// fmt.Println(e.DOM.Html())
 
 		// 	children 5 div with tag jsslot=""
 		// 1. just the header
@@ -142,8 +146,10 @@ func getContents(word string) (*WordStruct, int) {
 		// 4. translations in other language
 		// 5. use over time graph
 
+		firstContainer := e.DOM.Find(".lr_container").First()
+
 		// 3rd div with attribute jsslot="" go obtain the main data
-		thirdJsSlot := e.DOM.Find(jsSlotsFilterTag).FilterFunction(func(i int, s *goquery.Selection) bool {
+		thirdJsSlot := firstContainer.Find(jsSlotsFilterTag).FilterFunction(func(i int, s *goquery.Selection) bool {
 			return i == 2
 		})
 
@@ -271,6 +277,8 @@ func getContents(word string) (*WordStruct, int) {
 
 		wordS.PartsOfSpeeches = allPoses
 
+		// fmt.Println("asdf",wordS)
+
 	})
 
 	// Before making a request print "Visiting ..."
@@ -294,6 +302,7 @@ func getContents(word string) (*WordStruct, int) {
 	// 	fmt.Println(err)
 	// }
 	// fmt.Print(string(b))
+	// fmt.Println("from here",wordS)
 	return &wordS, errorStatus
 }
 
