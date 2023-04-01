@@ -100,6 +100,10 @@ func main() {
 		return c.JSON(http.StatusOK, getRandomUserAgent())
 	})
 
+	e.GET("/ping", func(c echo.Context) error {
+		return c.String(200,"pong")
+	})
+
 	URL := ""
 
 	if runtime.GOOS == "windows" {
