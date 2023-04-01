@@ -26,4 +26,4 @@ jobs:
           cd /var/www/dictionary-api
           git pull
           go build -o main
-          systemctl restart dictionary-api
+          sudo systemctl restart dictionary-api
