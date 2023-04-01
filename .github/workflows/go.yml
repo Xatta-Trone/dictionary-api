@@ -32,8 +32,5 @@ jobs:
         USERNAME: ${{ secrets.USERNAME }}
         PORT: ${{ secrets.PORT }}
         KEY: ${{ secrets.SSHKEY }}
-        script: |
-          cd /var/www/dictionary-api
-          git pull
-          go build -o main
-          sudo systemctl restart dictionary-api
+        script:
+          cd /var/www/dictionary-api && git pull && go build -o main && sudo systemctl restart dictionary-api
