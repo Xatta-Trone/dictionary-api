@@ -16,14 +16,14 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Deploying
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.HOST }}
-          USERNAME: ${{ secrets.USERNAME }}
-          PORT: ${{ secrets.PORT }}
-          KEY: ${{ secrets.SSHKEY }}
-          script: |
-            cd /var/www/dictionary-api
-            git pull
-            go build -o main
-            systemctl restart dictionary-api
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        USERNAME: ${{ secrets.USERNAME }}
+        PORT: ${{ secrets.PORT }}
+        KEY: ${{ secrets.SSHKEY }}
+        script: |
+          cd /var/www/dictionary-api
+          git pull
+          go build -o main
+          systemctl restart dictionary-api
