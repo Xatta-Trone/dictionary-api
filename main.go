@@ -101,7 +101,7 @@ func main() {
 	})
 
 	e.GET("/ping", func(c echo.Context) error {
-		return c.String(200,"ponga")
+		return c.String(200,"hello there")
 	})
 
 	URL := ""

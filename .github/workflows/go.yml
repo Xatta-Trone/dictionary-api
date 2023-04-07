@@ -37,3 +37,4 @@ jobs:
           git pull origin main
           go build -o main 
           systemctl restart dictionary-api
+          systemctl status dictionary-api
