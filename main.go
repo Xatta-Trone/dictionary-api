@@ -72,7 +72,7 @@ func main() {
 	getUserAgents()
 
 	e := echo.New()
-	e.Use(middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(20)))
+	e.Use(middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(100)))
 	e.GET("/word/:word", func(c echo.Context) error {
 		word := strings.ToLower(c.Param("word"))
 
@@ -294,6 +294,7 @@ func getContents(word string) (*WordStruct, int) {
 	c.OnError(func(r *colly.Response, err error) {
 		errorStatus = r.StatusCode
 		fmt.Println("Request URL:", r.Request.URL, "failed with response:", r, "\nError:", err)
+		
 	})
 
 	// Start scraping on https://hackerspaces.org
